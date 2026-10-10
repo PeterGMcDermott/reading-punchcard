@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Reading Punchcard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bungee&display=swap');
+
+    :root {
+      color-scheme: light dark;
+      --ink: #17213b;
+      --muted: #58637c;
+      --paper: #f6f9ff;
+      --panel: #ffffff;
+      --panel-strong: #eaf1ff;
+      --line: #bcc9e4;
+      --navy: #172a5b;
+      --blue: #1769e0;
+      --cyan: #29b8c8;
+      --red: #e44646;
+      --yellow: #f5bf27;
+      --green: #2f9d68;
+      --shadow: 0 18px 50px rgba(24, 43, 87, .14);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #f4f7ff;
+        --muted: #b9c4dc;
+        --paper: #081126;
+        --panel: #111d38;
+        --panel-strong: #172846;
+        --line: #344563;
+        --navy: #dbe7ff;
+        --blue: #68a5ff;
+        --cyan: #58d2de;
+        --red: #ff7575;
+        --yellow: #ffd45b;
+        --green: #58c78e;
+        --shadow: 0 22px 60px rgba(0, 0, 0, .34);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--paper); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--cyan) 10%, transparent) 0 1px, transparent 2px),
+        radial-gradient(circle at 84% 17%, color-mix(in srgb, var(--yellow) 16%, transparent) 0 1.5px, transparent 2.5px),
+        var(--paper);
+      background-size: 78px 78px, 113px 113px, auto;
+      font-family: "Atkinson Hyperlegible", ui-rounded, system-ui, sans-serif;
+      line-height: 1.45;
+      padding: clamp(18px, 4vw, 48px);
+    }
+
+    button { font: inherit; }
+
+    .sheet {
+      width: min(1050px, 100%);
+      margin: 0 auto;
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 28px 28px 12px 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: center;
+      padding: clamp(28px, 5vw, 58px);
+      color: #fff;
+      background: #14265b;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .hero::before {
+      width: 310px;
+      height: 310px;
+      right: -115px;
+      top: -155px;
+      background: #1f67c9;
+      opacity: .9;
+    }
+
+    .hero::after {
+      width: 180px;
+      height: 180px;
+      left: 48%;
+      bottom: -145px;
+      background: #de4545;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #9ee8f0;
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 700px;
+      font-family: "Bungee", "Atkinson Hyperlegible", sans-serif;
+      font-size: clamp(2.25rem, 6vw, 5.3rem);
+      line-height: .98;
+      letter-spacing: -.025em;
+      font-weight: 400;
+    }
+
+    .hero-copy {
+      margin: 18px 0 0;
+      max-width: 600px;
+      color: #e1e9ff;
+      font-size: clamp(1.05rem, 2vw, 1.3rem);
+    }
+
+    .book-planet {
+      width: clamp(130px, 18vw, 200px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #ffd254;
+      border: 10px solid #f4b72b;
+      box-shadow: 0 0 0 16px rgba(255, 255, 255, .08);
+      transform: rotate(4deg);
+    }
+
+    .book-planet svg { width: 66%; height: auto; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 2px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .stat {
+      padding: 20px clamp(16px, 3vw, 30px);
+      text-align: center;
+    }
+
+    .stat + .stat { border-left: 1px solid var(--line); }
+
+    .stat strong {
+      display: block;
+      color: var(--navy);
+      font-family: "Bungee", "Atkinson Hyperlegible", sans-serif;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .stat span { color: var(--muted); font-size: .94rem; }
+
+    .content { padding: clamp(24px, 4vw, 46px); }
+
+    .progress-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      line-height: 1.1;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .counter b { color: var(--blue); font-size: 1.25rem; }
+
+    .missions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .mission {
+      min-width: 0;
+      padding: 18px;
+      background: color-mix(in srgb, var(--panel-strong) 60%, var(--panel));
+      border: 1.5px solid var(--line);
+      border-radius: 20px 20px 8px 8px;
+    }
+
+    .mission-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .mission-title {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--navy);
+    }
+
+    .prize-token {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .prize-token svg { width: 25px; height: 25px; color: var(--red); }
+
+    .punches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+    }
+
+    .punch {
+      appearance: none;
+      min-width: 0;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 2px dashed var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      position: relative;
+      transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    .punch:hover { border-color: var(--blue); color: var(--blue); }
+    .punch:focus-visible { outline: 4px solid color-mix(in srgb, var(--blue) 30%, transparent); outline-offset: 3px; }
+    .punch:active { transform: scale(.96); }
+
+    .punch span {
+      font-family: "Bungee", "Atkinson Hyperlegible", sans-serif;
+      font-size: clamp(1rem, 2vw, 1.35rem);
+      font-weight: 400;
+    }
+
+    .punch.done {
+      color: #fff;
+      border-style: solid;
+      border-color: #1769e0;
+      background: #1769e0;
+    }
+
+    .punch.done::after {
+      content: "✓";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.7rem;
+      font-weight: 700;
+    }
+
+    .punch.done span { opacity: 0; }
+
+    .mission.complete {
+      border-color: var(--green);
+      background: color-mix(in srgb, var(--green) 12%, var(--panel));
+    }
+
+    .mission.complete .prize-token { color: var(--green); }
+
+    .reward-strip {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      padding: 17px 18px;
+      border-radius: 10px;
+      color: #fff;
+      background: #1c326a;
+    }
+
+    .reward-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #17213b;
+      background: #ffd254;
+    }
+
+    .reward-icon svg { width: 27px; height: 27px; }
+    .reward-copy strong { display: block; font-size: 1.03rem; }
+    .reward-copy span { color: #d7e2ff; font-size: .9rem; }
+
+    .remaining {
+      font-family: "Bungee", "Atkinson Hyperlegible", sans-serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .session-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .reset {
+      flex: none;
+      border: 0;
+      border-bottom: 2px solid currentColor;
+      padding: 5px 1px;
+      color: var(--blue);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .reset:hover { color: var(--red); }
+    .reset:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 30%, transparent); outline-offset: 4px; }
+
+    .celebration {
+      display: none;
+      margin: 22px 0 0;
+      padding: 18px 20px;
+      border: 2px solid var(--green);
+      border-radius: 10px;
+      color: var(--ink);
+      background: color-mix(in srgb, var(--green) 10%, var(--panel));
+      font-weight: 700;
+    }
+
+    .celebration.show { display: block; }
+
+    .fine-print {
+      padding: 16px clamp(24px, 4vw, 46px) 20px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: .82rem;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 10px; }
+      .sheet { border-radius: 22px 22px 8px 8px; }
+      .hero { grid-template-columns: 1fr; padding: 30px 24px; }
+      .book-planet { display: none; }
+      .summary { grid-template-columns: 1fr; }
+      .stat { display: flex; align-items: baseline; justify-content: space-between; text-align: left; padding: 13px 22px; }
+      .stat + .stat { border-left: 0; border-top: 1px solid var(--line); }
+      .stat strong { font-size: 1.35rem; }
+      .missions { grid-template-columns: 1fr; }
+      .mission { display: grid; grid-template-columns: minmax(125px, 1fr) minmax(150px, 1.25fr); align-items: center; gap: 12px; }
+      .mission-top { display: block; margin: 0; }
+      .prize-token { margin-top: 5px; }
+      .progress-head { align-items: center; }
+      .reward-strip { grid-template-columns: auto 1fr; }
+      .remaining { grid-column: 2; }
+      .actions { align-items: flex-start; }
+    }
+
+    @media (max-width: 390px) {
+      .mission { grid-template-columns: 1fr; }
+      .progress-head { display: block; }
+      .counter { margin-top: 5px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    @media print {
+      @page { size: letter portrait; margin: .35in; }
+      :root {
+        --ink: #101010;
+        --muted: #343434;
+        --paper: #fff;
+        --panel: #fff;
+        --panel-strong: #f4f4f4;
+        --line: #666;
+        --navy: #111;
+        --blue: #111;
+        --green: #111;
+      }
+      body { min-height: auto; padding: 0; background: #fff; }
+      .sheet { width: 100%; border: 2px solid #111; border-radius: 0; box-shadow: none; }
+      .hero { padding: 24px 30px; color: #fff; background: #111; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .hero::before, .hero::after { display: none; }
+      h1 { font-size: 38pt; }
+      .hero-copy { color: #fff; }
+      .book-planet { background: #fff; border-color: #fff; box-shadow: none; }
+      .summary { grid-template-columns: repeat(3, 1fr); }
+      .stat { display: block; text-align: center; padding: 12px; }
+      .stat + .stat { border-top: 0; border-left: 1px solid #666; }
+      .content { padding: 24px 30px; }
+      .missions { grid-template-columns: repeat(3, 1fr); }
+      .mission { display: block; background: #fff; border-color: #222; break-inside: avoid; }
+      .punch { border-color: #222; background: #fff; color: #111; }
+      .punch.done { color: #fff; background: #111; border-color: #111; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .reward-strip { color: #fff; background: #111; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .reward-copy span { color: #fff; }
+      .actions, .celebration { display: none !important; }
+      .fine-print { padding: 12px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Parker’s next adventure</p>
+        <h1 id="page-title">Read 9 books.<br>Earn 3 plushies.</h1>
+        <p class="hero-copy">Finish a book, punch a circle. Every 3 books unlocks another Among Us plushie.</p>
+      </div>
+      <div class="book-planet" aria-hidden="true">
+        <svg viewBox="0 0 120 100" fill="none">
+          <path d="M17 20c18-3 31 1 43 13v52C48 73 35 69 17 72V20Z" fill="#fff" stroke="#17213b" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M103 20c-18-3-31 1-43 13v52c12-12 25-16 43-13V20Z" fill="#e8f1ff" stroke="#17213b" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M60 33v52" stroke="#17213b" stroke-width="6" stroke-linecap="round"/>
+          <path d="M28 35c8 0 14 2 21 7M28 49c8 0 14 2 21 7" stroke="#e44646" stroke-width="5" stroke-linecap="round"/>
+          <path d="M92 35c-8 0-14 2-21 7M92 49c-8 0-14 2-21 7" stroke="#1769e0" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="summary" aria-label="Reading goal summary">
+      <div class="stat"><strong>2</strong><span>plushies already earned</span></div>
+      <div class="stat"><strong>3 books</strong><span>unlock each new plushie</span></div>
+      <div class="stat"><strong>3</strong><span>plushies left to earn</span></div>
+    </section>
+
+    <section class="content">
+      <div class="progress-head">
+        <h2>The next 9 books</h2>
+        <div class="counter" aria-live="polite"><b id="bookCount">0</b> of 9 finished</div>
+      </div>
+
+      <div class="missions" id="missions">
+        <article class="mission" data-mission="1">
+          <div class="mission-top">
+            <h3 class="mission-title">Mission 1</h3>
+            <div class="prize-token">
+              <svg viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                <path d="M11 28V13c0-6 3-9 8-9 4 0 7 2 8 6l4 2v9h-5v7h-5v-7h-5v7h-5Z" fill="currentColor"/>
+                <path d="M17 9h8v6h-8z" fill="#dff7ff"/>
+              </svg>
+              Plushie #3
+            </div>
+          </div>
+          <div class="punches">
+            <button class="punch" data-book="1" aria-pressed="false" aria-label="Mark book 1 finished"><span>1</span></button>
+            <button class="punch" data-book="2" aria-pressed="false" aria-label="Mark book 2 finished"><span>2</span></button>
+            <button class="punch" data-book="3" aria-pressed="false" aria-label="Mark book 3 finished"><span>3</span></button>
+          </div>
+        </article>
+
+        <article class="mission" data-mission="2">
+          <div class="mission-top">
+            <h3 class="mission-title">Mission 2</h3>
+            <div class="prize-token">
+              <svg viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                <path d="M11 28V13c0-6 3-9 8-9 4 0 7 2 8 6l4 2v9h-5v7h-5v-7h-5v7h-5Z" fill="currentColor"/>
+                <path d="M17 9h8v6h-8z" fill="#dff7ff"/>
+              </svg>
+              Plushie #4
+            </div>
+          </div>
+          <div class="punches">
+            <button class="punch" data-book="4" aria-pressed="false" aria-label="Mark book 4 finished"><span>4</span></button>
+            <button class="punch" data-book="5" aria-pressed="false" aria-label="Mark book 5 finished"><span>5</span></button>
+            <button class="punch" data-book="6" aria-pressed="false" aria-label="Mark book 6 finished"><span>6</span></button>
+          </div>
+        </article>
+
+        <article class="mission" data-mission="3">
+          <div class="mission-top">
+            <h3 class="mission-title">Mission 3</h3>
+            <div class="prize-token">
+              <svg viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                <path d="M11 28V13c0-6 3-9 8-9 4 0 7 2 8 6l4 2v9h-5v7h-5v-7h-5v7h-5Z" fill="currentColor"/>
+                <path d="M17 9h8v6h-8z" fill="#dff7ff"/>
+              </svg>
+              Plushie #5
+            </div>
+          </div>
+          <div class="punches">
+            <button class="punch" data-book="7" aria-pressed="false" aria-label="Mark book 7 finished"><span>7</span></button>
+            <button class="punch" data-book="8" aria-pressed="false" aria-label="Mark book 8 finished"><span>8</span></button>
+            <button class="punch" data-book="9" aria-pressed="false" aria-label="Mark book 9 finished"><span>9</span></button>
+          </div>
+        </article>
+      </div>
+
+      <div class="reward-strip" aria-live="polite">
+        <div class="reward-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M8 4h16v4c0 5-3 9-8 10-5-1-8-5-8-10V4Z" fill="currentColor"/>
+            <path d="M8 7H4c0 5 2 8 7 8M24 7h4c0 5-2 8-7 8M16 18v6M10 28h12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="reward-copy">
+          <strong id="rewardTitle">First stop: plushie #3</strong>
+          <span id="rewardDetail">3 books to go</span>
+        </div>
+        <div class="remaining" id="remaining">3 left</div>
+      </div>
+
+      <p class="celebration" id="celebration" role="status"></p>
+
+      <div class="actions">
+        <p class="session-note">Tap circles to try it here. Marks stay only while this page is open. The printed card is made for real punches, stickers, or check marks.</p>
+        <button class="reset" id="reset" type="button">Clear marks</button>
+      </div>
+    </section>
+
+    <footer class="fine-print">One finished book = one punch. Three punches = one new plushie.</footer>
+  </main>
+
+  <script>
+    (function () {
+      var punches = Array.prototype.slice.call(document.querySelectorAll('.punch'));
+      var countEl = document.getElementById('bookCount');
+      var rewardTitle = document.getElementById('rewardTitle');
+      var rewardDetail = document.getElementById('rewardDetail');
+      var remainingEl = document.getElementById('remaining');
+      var celebration = document.getElementById('celebration');
+      var reset = document.getElementById('reset');
+      var done = {};
+
+      function update() {
+        var count = Object.keys(done).length;
+        var rewardsEarned = Math.floor(count / 3);
+        var prizesLeft = Math.max(0, 3 - rewardsEarned);
+        var nextMilestone = Math.min(9, (rewardsEarned + 1) * 3);
+        var booksToNext = Math.max(0, nextMilestone - count);
+
+        countEl.textContent = String(count);
+        remainingEl.textContent = prizesLeft + (prizesLeft === 1 ? ' left' : ' left');
+
+        document.querySelectorAll('.mission').forEach(function (mission, index) {
+          mission.classList.toggle('complete', count >= (index + 1) * 3);
+        });
+
+        celebration.classList.remove('show');
+        if (count === 9) {
+          rewardTitle.textContent = 'All 3 plushies unlocked!';
+          rewardDetail.textContent = 'Mission complete';
+          celebration.textContent = 'Amazing reading, Parker! You finished all 9 books.';
+          celebration.classList.add('show');
+        } else {
+          rewardTitle.textContent = 'Next stop: plushie #' + (3 + rewardsEarned);
+          rewardDetail.textContent = booksToNext + (booksToNext === 1 ? ' book to go' : ' books to go');
+          if (count > 0 && count % 3 === 0) {
+            celebration.textContent = 'Plushie #' + (2 + rewardsEarned) + ' unlocked. Nice work!';
+            celebration.classList.add('show');
+          }
+        }
+      }
+
+      punches.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var book = button.getAttribute('data-book');
+          if (done[book]) {
+            delete done[book];
+            button.classList.remove('done');
+            button.setAttribute('aria-pressed', 'false');
+          } else {
+            done[book] = true;
+            button.classList.add('done');
+            button.setAttribute('aria-pressed', 'true');
+          }
+          update();
+        });
+      });
+
+      reset.addEventListener('click', function () {
+        done = {};
+        punches.forEach(function (button) {
+          button.classList.remove('done');
+          button.setAttribute('aria-pressed', 'false');
+        });
+        update();
+      });
+
+      update();
+    }());
+  </script>
+</body>
+</html>
